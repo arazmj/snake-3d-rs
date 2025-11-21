@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Snake on Cube</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
+    <div id="ui-layer">
+        <div id="score-board">Score: <span id="score">0</span></div>
+        <div id="game-over" class="hidden">
+            <h1>Game Over</h1>
+            <p>Press 'R' to Restart</p>
+        </div>
+        <div id="controls-hint">
+            WASD / Arrows to Move | R to Restart
+        </div>
+    </div>
+    <div id="loading" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:24px;">
+        Loading 3D Snake...
+    </div>
+    <script type="module">
+        import init from './pkg/snake3d_rs.js?v=5';
+        console.log("JS: Starting init...");
+        init().then(() => {
+            console.log("JS: Init successful!");
+            document.getElementById('loading').style.display = 'none';
+        }).catch(e => {
+            console.error("JS: Init failed:", e);
+        });
+    </script>
+</body>
+
+</html>
