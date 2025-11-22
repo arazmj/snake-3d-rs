@@ -48,18 +48,53 @@ canvas {
     left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.85);
     padding: 40px;
-    border-radius: 10px;
+    border-radius: 15px;
     border: 2px solid #ff4444;
+    box-shadow: 0 0 20px rgba(255, 68, 68, 0.5);
+    color: white;
+}
+
+#game-over h1 {
+    margin-top: 0;
+    color: #ff4444;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+#final-score {
+    font-size: 2em;
+    margin: 20px 0;
+    color: #ffeb3b;
+}
+
+.blink {
+    animation: blinker 1.5s linear infinite;
+}
+
+@keyframes blinker {
+    50% {
+        opacity: 0;
+    }
 }
 
 .hidden {
-    display: none;
+    display: none !important;
 }
 
 #controls-hint {
     text-align: center;
     opacity: 0.7;
     font-size: 14px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    border-radius: 20px;
+    align-self: center;
+}
+
+#high-score-container {
+    font-size: 0.8em;
+    opacity: 0.8;
+    color: #4caf50;
 }

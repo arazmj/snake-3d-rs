@@ -3,9 +3,11 @@ use wasm_bindgen::JsCast;
 use three_d::*;
 use crate::game::{GameState, Direction};
 use crate::renderer::GameRenderer;
+use crate::audio::AudioPlayer;
 
 mod game;
 mod renderer;
+mod audio;
 
 #[wasm_bindgen(start)]
 pub fn init() -> Result<(), JsValue> {
@@ -21,7 +23,7 @@ pub fn init() -> Result<(), JsValue> {
     log::info!("Found canvas, creating Window...");
     let window = Window::new(WindowSettings {
         title: "3D Snake".to_string(),
-        canvas: Some(canvas.clone()),
+        min_size: (100, 100),
         ..Default::default()
     })
     .unwrap();
@@ -31,10 +33,10 @@ pub fn init() -> Result<(), JsValue> {
     let grid_size = 10;
     let mut game = GameState::new(grid_size);
     let mut renderer = GameRenderer::new(context, grid_size);
+    let audio = AudioPlayer::new();
 
     // Game loop variables
     let mut time_since_last_move = 0.0;
-    let move_interval = 0.15; // Seconds per move (speed)
     let mut has_logged = false;
 
     // Hide loading screen
@@ -55,6 +57,9 @@ pub fn init() -> Result<(), JsValue> {
         // Handle Input
         for event in &events {
             if let Event::KeyPress { kind, .. } = event {
+                // Resume audio context on first interaction
+                audio.resume_context();
+
                 match kind {
                     Key::ArrowUp | Key::W => {
                         if game.snake.direction != Direction::Down {
@@ -78,7 +83,9 @@ pub fn init() -> Result<(), JsValue> {
                     }
                     Key::R => {
                         if game.game_over {
+                            let high_score = game.high_score;
                             game = GameState::new(grid_size);
+                            game.high_score = high_score;
                         }
                     }
                     _ => {}
@@ -93,8 +100,28 @@ pub fn init() -> Result<(), JsValue> {
         // Update Game Logic
         // Use accumulated time for fixed step update
         time_since_last_move += frame_input.elapsed_time / 1000.0; // elapsed_time is ms
+
+        // Calculate current speed based on score (max speed at 50 points)
+        let base_speed = 0.15;
+        let min_speed = 0.05;
+        let speed_reduction = (game.score as f64 * 0.002).min(base_speed - min_speed);
+        let move_interval = base_speed - speed_reduction;
+
         if time_since_last_move >= move_interval {
-            game.update();
+            let old_food_pos = game.food;
+            let event = game.update();
+            match event {
+                crate::game::GameEvent::Eat => {
+                    audio.play_eat();
+                    renderer.spawn_particles(old_food_pos, false);
+                },
+                crate::game::GameEvent::EatPrize => {
+                    audio.play_prize();
+                    renderer.spawn_particles(old_food_pos, true);
+                },
+                crate::game::GameEvent::GameOver => audio.play_game_over(),
+                crate::game::GameEvent::None => {}
+            }
             time_since_last_move = 0.0;
         }
 
@@ -117,10 +144,20 @@ fn update_ui(game: &GameState) {
         score_el.set_inner_html(&game.score.to_string());
     }
 
+    if let Some(high_score_el) = document.get_element_by_id("high-score") {
+        high_score_el.set_inner_html(&game.high_score.to_string());
+        if let Some(container) = document.get_element_by_id("high-score-container") {
+             container.class_list().remove_1("hidden").unwrap_or(());
+        }
+    }
+
     if let Some(game_over_el) = document.get_element_by_id("game-over") {
         let class_list = game_over_el.class_list();
         if game.game_over {
             class_list.remove_1("hidden").unwrap();
+            if let Some(final_score_el) = document.get_element_by_id("final-score") {
+                final_score_el.set_inner_html(&format!("Score: {}", game.score));
+            }
         } else {
             class_list.add_1("hidden").unwrap();
         }

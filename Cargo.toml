@@ -21,7 +21,17 @@ features = [
     "Document",
     "Element",
     "HtmlElement",
+    "HtmlCanvasElement",
     "DomTokenList",
+    "HtmlAudioElement",
+    "AudioContext",
+    "OscillatorNode",
+    "GainNode",
+    "AudioDestinationNode",
+    "AudioNode",
+    "AudioParam",
+    "OscillatorType",
+    "AudioContextState",
 ]
 
 [profile.release]
