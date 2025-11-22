@@ -55,10 +55,21 @@ impl Snake {
     }
 }
 
+#[derive(PartialEq)]
+pub enum GameEvent {
+    None,
+    Eat,
+    EatPrize,
+    GameOver,
+}
+
 pub struct GameState {
     pub snake: Snake,
     pub food: Position,
+    pub is_prize: bool,
     pub score: u32,
+    pub high_score: u32,
+    pub food_eaten_count: u32,
     pub game_over: bool,
     pub config: GameConfig,
 }
@@ -71,10 +82,18 @@ impl GameState {
             v: grid_size / 2,
         };
         let snake = Snake::new(start_pos, Direction::Up);
+        // Note: High score persistence would normally be loaded from localStorage here,
+        // but accessing window/localStorage in pure logic struct is messy.
+        // We'll handle it in lib.rs or pass it in.
+        // For now, start at 0, and update_ui will handle display if we store it externally.
+
         let mut game = Self {
             snake,
             food: start_pos, // Placeholder
+            is_prize: false,
             score: 0,
+            high_score: 0,
+            food_eaten_count: 0,
             game_over: false,
             config: GameConfig { grid_size },
         };
@@ -112,12 +131,14 @@ impl GameState {
             self.spawn_food(); // Retry (recursive, but low probability of stack overflow for small snake)
         } else {
             self.food = new_pos;
+            // Spawn a prize every 5 items
+            self.is_prize = (self.food_eaten_count + 1) % 5 == 0;
         }
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self) -> GameEvent {
         if self.game_over {
-            return;
+            return GameEvent::None;
         }
 
         self.snake.direction = self.snake.next_direction;
@@ -137,7 +158,7 @@ impl GameState {
                 // Safe
             } else {
                 self.game_over = true;
-                return;
+                return GameEvent::GameOver;
             }
         }
 
@@ -149,10 +170,17 @@ impl GameState {
         // but if transition rotates us, we must update the current direction.
         
         if growing {
-            self.score += 1;
+            self.score += if self.is_prize { 5 } else { 1 };
+            if self.score > self.high_score {
+                self.high_score = self.score;
+            }
+            self.food_eaten_count += 1;
+            let event = if self.is_prize { GameEvent::EatPrize } else { GameEvent::Eat };
             self.spawn_food();
+            event
         } else {
             self.snake.body.pop_back();
+            GameEvent::None
         }
     }
 

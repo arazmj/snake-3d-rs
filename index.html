@@ -14,10 +14,14 @@
         <canvas id="canvas" tabindex="1"></canvas>
     </div>
     <div id="ui-layer">
-        <div id="score-board">Score: <span id="score">0</span></div>
+        <div id="score-board">
+            <div>Score: <span id="score">0</span></div>
+            <div id="high-score-container" class="hidden">High Score: <span id="high-score">0</span></div>
+        </div>
         <div id="game-over" class="hidden">
             <h1>Game Over</h1>
-            <p>Press 'R' to Restart</p>
+            <div id="final-score">Score: 0</div>
+            <p class="blink">Press 'R' to Restart</p>
         </div>
         <div id="controls-hint">
             WASD / Arrows to Move | R to Restart
