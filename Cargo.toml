@@ -32,6 +32,9 @@ features = [
     "AudioParam",
     "OscillatorType",
     "AudioContextState",
+    "TouchEvent",
+    "TouchList",
+    "Touch",
 ]
 
 [profile.release]

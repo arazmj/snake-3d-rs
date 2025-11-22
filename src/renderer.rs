@@ -247,14 +247,14 @@ impl GameRenderer {
         // self.control.handle_events(&mut self.camera, events);
     }
 
-    pub fn update_camera_target(&mut self, face: Face) {
+    pub fn update_camera_target(&mut self, face: Face, distance: f32) {
         let (pos, up) = match face {
-            Face::Front => (vec3(0.0, 0.0, 4.0), vec3(0.0, 1.0, 0.0)),
-            Face::Back => (vec3(0.0, 0.0, -4.0), vec3(0.0, 1.0, 0.0)),
-            Face::Left => (vec3(-4.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0)),
-            Face::Right => (vec3(4.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0)),
-            Face::Top => (vec3(0.0, 4.0, 0.0), vec3(0.0, 0.0, -1.0)),
-            Face::Bottom => (vec3(0.0, -4.0, 0.0), vec3(0.0, 0.0, 1.0)),
+            Face::Front => (vec3(0.0, 0.0, distance), vec3(0.0, 1.0, 0.0)),
+            Face::Back => (vec3(0.0, 0.0, -distance), vec3(0.0, 1.0, 0.0)),
+            Face::Left => (vec3(-distance, 0.0, 0.0), vec3(0.0, 1.0, 0.0)),
+            Face::Right => (vec3(distance, 0.0, 0.0), vec3(0.0, 1.0, 0.0)),
+            Face::Top => (vec3(0.0, distance, 0.0), vec3(0.0, 0.0, -1.0)),
+            Face::Bottom => (vec3(0.0, -distance, 0.0), vec3(0.0, 0.0, 1.0)),
         };
         
         self.target_pos = pos;
@@ -264,8 +264,18 @@ impl GameRenderer {
     pub fn render(&mut self, game: &GameState, target: &RenderTarget, dt: f64) {
         self.time += dt;
 
+        // Calculate required distance based on aspect ratio
+        let viewport = self.camera.viewport();
+        let aspect = viewport.width as f32 / viewport.height as f32;
+        let base_dist = 4.5; // Increased slightly from 4.0 for better padding
+        let dist = if aspect < 1.0 {
+            base_dist / aspect
+        } else {
+            base_dist
+        };
+
         // Update Camera Position based on Snake Head
-        self.update_camera_target(game.snake.head().face);
+        self.update_camera_target(game.snake.head().face, dist);
 
         // Smoothly interpolate camera
         let speed = 5.0; // Adjust for smoothness
