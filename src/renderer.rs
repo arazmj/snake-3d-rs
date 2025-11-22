@@ -46,14 +46,6 @@ impl GameRenderer {
         for x in 0..grid_size {
             for y in 0..grid_size {
                 for z in 0..grid_size {
-                    // We only want the surface voxels? 
-                    // The user image shows a solid-looking block of voxels, or at least the outer shell.
-                    // If we render the inside, it might look too dense with transparency.
-                    // But "The Board: A large Cube divided into a 10x10 grid" implies the whole volume or surface.
-                    // The reference image looks like a solid block of glass cubes.
-                    // Let's render all of them for the full effect, or just the shell if performance/visuals demand.
-                    // 10x10x10 is 1000 instances, which is trivial for InstancedMesh.
-                    
                     // Position
                     // Map 0..N to -1..1
                     // Center of voxel i is -1 + (i * cell_size) + cell_size/2
@@ -68,42 +60,25 @@ impl GameRenderer {
             }
         }
 
-        // board_instances was created above but we need to assign it to the struct later.
-        // Wait, I created it twice in the previous edit.
-        // One with default material (unused) and one with custom material.
-        // I need to remove the first one.
-        // Enable transparency
-        // Note: For correct transparency of many overlapping objects, we might need depth sorting or specific blend modes.
-        // three-d does some sorting.
-        // Let's set the blend mode.
-        // We need to access the material inside the Gm.
-        // Actually, we can set it on the material before creating Gm if we kept it mutable, 
-        // or just rely on `new` handling alpha < 255.
-        // `PhysicalMaterial::new` detects alpha and sets transparent render state usually.
-        // But let's ensure it.
-        // We can't easily modify the material inside Gm without destructuring or using mutable access if available.
-        // Let's construct material first.
-        
-        // Re-doing construction to set render states
         let mut board_material = PhysicalMaterial::new(
             &context,
             &CpuMaterial {
-                albedo: Srgba::new(0, 0, 255, 30), // Very transparent blue
-                roughness: 0.2,
-                metallic: 0.8, // Shiny
+                albedo: Srgba::new(50, 50, 200, 50), // Transparent blueish
+                roughness: 0.1,
+                metallic: 0.9,
+                emissive: Srgba::new(0, 0, 50, 255), // Slight glow
                 ..Default::default()
             },
         );
         board_material.render_states.blend = Blend::TRANSPARENCY;
-        // board_material.render_states.write_mask = WriteMask::COLOR; // Don't write depth for transparent things to avoid occlusion artifacts? 
-        // If we don't write depth, back faces will show through front faces regardless of order, which is good for "glass block".
         board_material.render_states.write_mask = WriteMask::COLOR;
 
+        // Use spheres for rounder look
         let board_instances = Gm::new(
             InstancedMesh::new(&context, &Instances {
                 transformations: board_transformations, 
                 ..Default::default()
-            }, &CpuMesh::cube()),
+            }, &CpuMesh::sphere(16)),
             board_material,
         );
 
@@ -168,13 +143,14 @@ impl GameRenderer {
         
         // Snake Instances
         let snake_instances = Gm::new(
-            InstancedMesh::new(&context, &Instances::default(), &CpuMesh::cube()), 
+            InstancedMesh::new(&context, &Instances::default(), &CpuMesh::sphere(16)),
             PhysicalMaterial::new(
                 &context,
                 &CpuMaterial {
                     albedo: Srgba::new_opaque(50, 200, 50), // Green snake
-                    emissive: Srgba::new_opaque(20, 100, 20), // Slight glow
-                    roughness: 0.3,
+                    emissive: Srgba::new_opaque(50, 150, 50), // Glow
+                    roughness: 0.2,
+                    metallic: 0.5,
                     ..Default::default()
                 },
             ),
@@ -210,7 +186,7 @@ impl GameRenderer {
 
         // Particle System
         let particle_system = Gm::new(
-            InstancedMesh::new(&context, &Instances::default(), &CpuMesh::cube()),
+            InstancedMesh::new(&context, &Instances::default(), &CpuMesh::sphere(8)),
             PhysicalMaterial::new(
                 &context,
                 &CpuMaterial {
@@ -357,9 +333,20 @@ impl GameRenderer {
         self.particle_system.geometry.set_instances(&particle_instances);
 
         // Render
-        let ambient = AmbientLight::new(&self.context, 0.4, Srgba::WHITE);
+        let ambient = AmbientLight::new(&self.context, 0.3, Srgba::WHITE);
         let directional = DirectionalLight::new(&self.context, 2.0, Srgba::WHITE, &vec3(1.0, 1.0, 1.0));
-        let lights: &[&dyn Light] = &[&ambient, &directional];
+
+        let point_light_color = if game.is_prize { Srgba::new_opaque(255, 215, 0) } else { Srgba::new_opaque(255, 50, 50) };
+        let point_light = PointLight::new(
+            &self.context,
+            5.0,
+            point_light_color,
+            &food_pos,
+            Attenuation { constant: 0.1, linear: 0.3, quadratic: 0.3 },
+        );
+
+        let lights: Vec<&dyn Light> = vec![&ambient, &directional, &point_light];
+        let lights = lights.as_slice();
 
         // Clear
         target.clear(ClearState::color_and_depth(0.1, 0.1, 0.1, 1.0, 1.0)); // Dark grey
