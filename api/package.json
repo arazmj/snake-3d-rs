@@ -1,0 +1,10 @@
+{
+  "name": "snake3d-api",
+  "version": "1.0.0",
+  "description": "Azure Functions API for Snake3D",
+  "scripts": {
+    "start": "func start",
+    "test": "echo \"No tests yet...\""
+  },
+  "dependencies": {}
+}
