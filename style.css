@@ -4,6 +4,7 @@ body {
     background-color: #1a1a1a;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: white;
+    touch-action: none;
 }
 
 #canvas-container {

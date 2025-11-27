@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>3D Snake on Cube</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="favicon.png">
@@ -58,6 +58,12 @@
     <script type="module">
         import init from './pkg/snake3d_rs.js?v=5';
         console.log("JS: Starting init...");
+
+        // Disable double-click zooming
+        document.addEventListener('dblclick', function(event) {
+            event.preventDefault();
+        }, { passive: false });
+
         init().then(() => {
             console.log("JS: Init successful!");
             document.getElementById('loading').style.display = 'none';
